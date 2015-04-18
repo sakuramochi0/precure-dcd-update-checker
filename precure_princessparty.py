@@ -20,52 +20,52 @@ def main():
     soup = BeautifulSoup(r.text)
      
     # ニュース一覧の取得
-    dts = soup.select('.dl-topics dt')
-    for dt in dts:
-        
-        # 更新日を取得
-        date = parse(dt.text)
+    dds = soup.select('.dl-topics dd')
+    new_topics = []
      
-        # 新しいニュースがなければ終了
+    # 更新日を取得
+    date = parse(dds[0].find_previous().text)
+
+    # 各トピックスを処理
+    for dd in dds:
+
+        # ニュースがデータベース内にあれば終了
         if topics.find({'_id': date}).count():
             break
-     
-        new_topics = []
-        # トピックスのリストを作成
-        for dd in dt.find_next_siblings():
+        
+        # 追加するトピックスを更新日のものに限定 = 区切り線が来たらそこで切る
+        if dd.has_attr('class') and dd['class'][0] == 'line':
+            break
 
-            # 追加するトピックスを更新日のものに限定 = 区切り線が来たらそこで切る
-            if dd.has_attr('class') and dd['class'] == 'line':
-                break
+        # aタグが存在しないddタグはスキップ
+        if not dd.a:
+            continue
 
-            # aタグが存在しないddタグはスキップ
-            if not dd.a:
-                continue
+        # 新しいトピック辞書の作成
+        topic = {}
+        a = dd.a
+        topic['category'] = a['class']
+        topic['category_text'] = a.text
+        topic['url'] = DOMAIN + a['href']
+        
+        # トピックスのタイトルを取得
+        r = requests.get(topic['url'])
+        r.encoding = 'euc-ja'
+        soup = BeautifulSoup(r.text)
+        topic['title'] = soup.h3.img['alt']
 
-            # 新しいトピック辞書の作成
-            topic = {}
-            a = dd.a
-            topic['category'] = a['class']
-            topic['category_text'] = a.text
-            topic['url'] = DOMAIN + a['href']
-            
-            # トピックスのタイトルを取得
-            r = requests.get(topic['url'])
-            r.encoding = 'euc-ja'
-            soup = BeautifulSoup(r.text)
-            topic['title'] = soup.h3.img['alt']
+        new_topics.append(topic)
 
-            new_topics.append(topic)
+    # 各トピックについて、
+    for topic in new_topics:
+        # 1. データベースを更新
+        topics.update({'_id': date}, {'topics': new_topics}, upsert=True)
 
-        # 各トピックについて、
-        for topic in new_topics:
-            # 1. データベースを更新
-            topics.update({'_id': date}, {'topics': new_topics}, upsert=True)
-
-            # 2. ツイート
-            status = '「{category}」のページが更新されました！ / {title} - {url}'.format(category=topic['category_text'], title=topic['title'], url=topic['url'])
-            t.update_status(status=status)
-     
+        # 2. ツイート
+        status = '「{category}」のページが更新されました！ / {title} - {url}'.format(category=topic['category_text'], title=topic['title'], url=topic['url'])
+        print(status)
+        t.update_status(status=status)
+        
 def get_twython():
     '''
     authonticated the account and return twitter class
