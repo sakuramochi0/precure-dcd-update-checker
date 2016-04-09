@@ -14,12 +14,12 @@ from pymongo.mongo_client import MongoClient
 def tweet_news():
     '''ニュースの更新を確認してツイートする関数'''
     # init
-    topics = MongoClient().precure_princessparty.topics
+    topics = MongoClient().precure_magicalparty.topics
     t = get_twython()
 
     # indexページの取得
     DOMAIN = 'http://www.precure-live.com'
-    URL_BASE = DOMAIN + '/pp/'
+    URL_BASE = DOMAIN + '/mp/'
     r = requests.get(URL_BASE)
     r.encoding = 'euc-ja'
     soup = BeautifulSoup(r.text)
@@ -51,7 +51,7 @@ def tweet_news():
         a = dd.a
         topic['category'] = a['class']
         topic['category_text'] = a.text
-        if a['href'].startswith('http'):
+        if not a['href'].startswith('http'):
             topic['url'] = DOMAIN + a['href']
         else:
             topic['url'] = a['href']
@@ -71,7 +71,7 @@ def tweet_news():
         topics.update({'_id': date}, {'topics': new_topics}, upsert=True)
 
         # 2. ツイート
-        status = '「{category}」が更新されたパフ！ / {title} - {url}'.format(category=topic['category_text'], title=topic['title'], url=topic['url'])
+        status = '「{category}」が更新されたモフ！ / {title} - {url}'.format(category=topic['category_text'], title=topic['title'], url=topic['url'])
         t.update_status(status=status)
         
 def get_twython():
@@ -93,7 +93,7 @@ def get_soup(url):
     
 def update_cards():
     '''cardsデータベースを更新し、新しいカードをツイートする関数'''
-    cards = MongoClient().precure_princessparty.cards
+    cards = MongoClient().precure_magicalparty.cards
     urls = get_urls()
     for url in urls:
         cards_soup = get_cards(url)
@@ -133,7 +133,7 @@ def parse_card_number(number):
 def get_urls():
     '''各シリーズのページURLを取得する関数'''
     global url_base
-    url_base = 'http://www.precure-live.com/pp/cardlist/'
+    url_base = 'http://www.precure-live.com/mp/cardlist/'
     r = requests.get(url_base)
     r.encoding = 'euc-ja'
     soup = BeautifulSoup(r.text)
