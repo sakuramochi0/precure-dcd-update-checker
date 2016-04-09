@@ -11,6 +11,9 @@ from bs4 import BeautifulSoup
 from twython import Twython, TwythonError
 from pymongo.mongo_client import MongoClient
 
+DOMAIN = 'http://www.precure-live.com'
+URL_BASE = DOMAIN + '/mp/'
+
 def tweet_news():
     '''ニュースの更新を確認してツイートする関数'''
     # init
@@ -18,8 +21,6 @@ def tweet_news():
     t = get_twython()
 
     # indexページの取得
-    DOMAIN = 'http://www.precure-live.com'
-    URL_BASE = DOMAIN + '/mp/'
     r = requests.get(URL_BASE)
     r.encoding = 'euc-ja'
     soup = BeautifulSoup(r.text)
@@ -132,9 +133,7 @@ def parse_card_number(number):
     
 def get_urls():
     '''各シリーズのページURLを取得する関数'''
-    global url_base
-    url_base = 'http://www.precure-live.com/mp/cardlist/'
-    r = requests.get(url_base)
+    r = requests.get(URL_BASE + 'cardlist/')
     r.encoding = 'euc-ja'
     soup = BeautifulSoup(r.text)
     urls = [i['href'] for i in soup.select('#snavi li a')[:-1]]
@@ -142,7 +141,7 @@ def get_urls():
 
 def get_cards(url):
     '''ページのURLからカードリストのsoupを作る関数'''
-    r = requests.get(url_base + url)
+    r = requests.get(URL_BASE + url)
     r.encoding = 'euc-ja'
     soup = BeautifulSoup(r.text)
     cards = soup.select('.cardCol')
