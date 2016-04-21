@@ -56,4 +56,4 @@ docs/_build/
 target/
 
 today_cards.py
-.credentials
+.credentials*
